@@ -26,7 +26,7 @@ generated ID to stdout. All other commands use this ID, not the spec name.
 
 | Command | Description |
 |---------|-------------|
-| bsg add <name> --type <type> [--body <text>] [--tag <csv>] | Create a spec, prints generated ID |
+| bsg add <name> --type <type> [--body <text>] [--tag <csv>] | Create a spec, prints generated ID. Reads body from stdin if piped. |
 | bsg show <id> | Display a spec and its history |
 | bsg status <id> <new-status> | Transition spec status (e.g. draft -> accepted) |
 | bsg delete <id> | Delete a spec and its links |

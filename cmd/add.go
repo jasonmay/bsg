@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/jasonmay/bsg/internal/db"
@@ -30,6 +32,16 @@ var addCmd = &cobra.Command{
 		}
 
 		body := addBody
+		if body == "" {
+			stat, _ := os.Stdin.Stat()
+			if stat.Mode()&os.ModeCharDevice == 0 {
+				data, err := io.ReadAll(os.Stdin)
+				if err != nil {
+					return fmt.Errorf("read stdin: %w", err)
+				}
+				body = strings.TrimSpace(string(data))
+			}
+		}
 		if body == "" {
 			body, err = editor.Open("# " + name + "\n\n")
 			if err != nil {
