@@ -1,5 +1,7 @@
 # BSG — Behavioral Spec Graph
 
+[![CI](https://github.com/jasonmay/bsg/actions/workflows/ci.yml/badge.svg)](https://github.com/jasonmay/bsg/actions/workflows/ci.yml)
+
 An LLM-first spec tracking tool for requirements, expectations, and intentions.
 
 BSG tracks **what your system should do** — living specs that evolve, link to code, and can be verified. Unlike task trackers, BSG manages behavioral specifications as a dependency-aware graph with code traceability and drift detection.
