@@ -14,17 +14,19 @@ generated ID to stdout. All other commands use this ID, not the spec name.
 | Command | Description |
 |---------|-------------|
 | bsg add <name> --type <type> [--body <text>] [--tag <csv>] | Create a spec, prints generated ID. Reads body from stdin if piped. |
-| bsg show <id> | Display a spec and its history |
+| bsg show <id> [--json] | Display a spec, its links, and relationships |
 | bsg status <id> <new-status> | Transition spec status (e.g. draft -> accepted) |
 | bsg delete <id> | Delete a spec and its links |
 | bsg link <id> --depends-on <id> | Create a spec-to-spec relationship |
 | bsg unlink <from> <to> [--relation <rel>] | Remove spec-to-spec relationships |
 | bsg trace <id> --file <path> [--as type] | Link a spec to code (--as: implements, tests, documents) |
 | bsg untrace <id> <file> | Remove a code link |
-| bsg prime | Show spec coverage and status |
+| bsg why <file[:line[:col]]> [--recursive] | Show all specs applicable to a file/position |
 | bsg summarize | Print summary of all specs with relationships |
+| bsg prime [--compact] [--json] | Show spec coverage and status |
+| bsg check-file <path> | Show specs linked to a file (with bodies) |
 | bsg sync | Rebuild database from spec files |
-| bsg check-file <path> | Show specs linked to a file |
+| bsg setup claude [--dry-run] [--remove] | Install/remove Claude Code hooks |
 
 ## Spec Types
 
@@ -58,6 +60,7 @@ Specs can be linked with directed edges via bsg link:
 
 depends_on edges are cycle-checked. Edges appear in both specs' JSON files.
 Remove with bsg unlink bsg-X bsg-Y [--relation <rel>].
+Use bsg why <file> --recursive to traverse edges and show upstream specs.
 
 ## Worked Example
 
@@ -85,8 +88,12 @@ Status:     implemented
 ...
 
 $ bsg check-file src/weight.go
-src/weight.go:
-  bsg-7f1a "Weight entries must be positive" [constraint/implemented] :ValidateWeight (implements)
+# Linked specs:
+#   bsg-7f1a "Weight entries must be positive" [implemented] — implements:ValidateWeight
+#     Reject zero or negative weight values at input
+
+$ bsg why src/weight.go --recursive
+(shows all specs at file scope + upstream specs via edges)
 
 $ bsg delete bsg-7f1a
 deleted bsg-7f1a
