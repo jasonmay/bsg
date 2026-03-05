@@ -11,7 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var setupRemove bool
+var (
+	setupRemove bool
+	setupDryRun bool
+)
 
 var setupCmd = &cobra.Command{
 	Use:   "setup",
@@ -27,11 +30,11 @@ var setupClaudeCmd = &cobra.Command{
 		if setupRemove {
 			return removeBSGHooks(settingsPath)
 		}
-		return installBSGHooks(settingsPath)
+		return installBSGHooks(settingsPath, setupDryRun)
 	},
 }
 
-func installBSGHooks(path string) error {
+func installBSGHooks(path string, dryRun bool) error {
 	settings, err := readSettings(path)
 	if err != nil {
 		return err
@@ -101,6 +104,18 @@ func installBSGHooks(path string) error {
 	}
 
 	settings["hooks"] = existingHooks
+
+	if dryRun {
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(settings); err != nil {
+			return fmt.Errorf("marshal settings: %w", err)
+		}
+		fmt.Printf("would write to %s:\n%s", path, buf.String())
+		return nil
+	}
 
 	if err := writeSettings(path, settings); err != nil {
 		return err
@@ -235,6 +250,7 @@ func writeSettings(path string, settings map[string]any) error {
 
 func init() {
 	setupClaudeCmd.Flags().BoolVar(&setupRemove, "remove", false, "remove BSG hooks")
+	setupClaudeCmd.Flags().BoolVar(&setupDryRun, "dry-run", false, "show what would be written without writing")
 	setupCmd.AddCommand(setupClaudeCmd)
 	rootCmd.AddCommand(setupCmd)
 }
