@@ -56,7 +56,11 @@ func exportSpecFile(db *sql.DB, bsgDir string, specID string) error {
 	if err != nil {
 		return fmt.Errorf("get links for export: %w", err)
 	}
-	return specfile.WriteSpec(bsgDir, spec, links)
+	edges, err := GetEdgesBySpec(db, specID)
+	if err != nil {
+		return fmt.Errorf("get edges for export: %w", err)
+	}
+	return specfile.WriteSpec(bsgDir, spec, links, edges)
 }
 
 func GetLinksBySpec(db *sql.DB, specID string) ([]model.CodeLink, error) {

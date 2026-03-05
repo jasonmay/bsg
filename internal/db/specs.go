@@ -38,7 +38,7 @@ func CreateSpec(db *sql.DB, bsgDir string, in CreateSpecInput) error {
 		Body:   in.Body,
 		Tags:   in.Tags,
 	}
-	if err := specfile.WriteSpec(bsgDir, spec, nil); err != nil {
+	if err := specfile.WriteSpec(bsgDir, spec, nil, nil); err != nil {
 		return fmt.Errorf("write spec file: %w", err)
 	}
 	return nil
@@ -156,18 +156,7 @@ func UpdateSpec(db *sql.DB, bsgDir string, in UpdateSpecInput) error {
 		return err
 	}
 
-	spec, err := GetSpec(db, in.ID)
-	if err != nil {
-		return fmt.Errorf("re-read spec for export: %w", err)
-	}
-	links, err := GetLinksBySpec(db, in.ID)
-	if err != nil {
-		return fmt.Errorf("get links for export: %w", err)
-	}
-	if err := specfile.WriteSpec(bsgDir, spec, links); err != nil {
-		return fmt.Errorf("write spec file: %w", err)
-	}
-	return nil
+	return exportSpecFile(db, bsgDir, in.ID)
 }
 
 func cascadeDeleteTx(tx *sql.Tx, id string) error {
