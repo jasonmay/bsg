@@ -5,9 +5,20 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/jasonmay/bsg/internal/model"
 )
+
+var statusOrder = []string{
+	string(model.StatusDraft),
+	string(model.StatusAccepted),
+	string(model.StatusImplemented),
+	string(model.StatusVerified),
+	string(model.StatusDeprecated),
+	string(model.StatusArchived),
+}
 
 type SpecFile struct {
 	ID     string     `json:"id"`
@@ -114,4 +125,87 @@ func DeleteSpec(bsgDir string, id string) error {
 		return fmt.Errorf("remove spec file: %w", err)
 	}
 	return nil
+}
+
+func Summarize(bsgDir string) (string, error) {
+	specs, err := ReadAll(bsgDir)
+	if err != nil {
+		return "", fmt.Errorf("read specs: %w", err)
+	}
+
+	var b strings.Builder
+
+	if len(specs) == 0 {
+		b.WriteString("No specs yet.\n")
+		return b.String(), nil
+	}
+
+	// Group by status
+	groups := make(map[string][]SpecFile)
+	for _, s := range specs {
+		groups[s.Status] = append(groups[s.Status], s)
+	}
+	// Sort each group by ID
+	for _, g := range groups {
+		sort.Slice(g, func(i, j int) bool { return g[i].ID < g[j].ID })
+	}
+
+	// Status summary table
+	b.WriteString("Status       Count\n")
+	b.WriteString("------------ -----\n")
+	for _, status := range statusOrder {
+		if n := len(groups[status]); n > 0 {
+			fmt.Fprintf(&b, "%-12s %d\n", status, n)
+		}
+	}
+	b.WriteString("\n")
+
+	// Spec tables grouped by status
+	for _, status := range statusOrder {
+		g := groups[status]
+		if len(g) == 0 {
+			continue
+		}
+		fmt.Fprintf(&b, "── %s%s ──\n", strings.ToUpper(status[:1]), status[1:])
+		for _, s := range g {
+			tags := ""
+			if len(s.Tags) > 0 {
+				tags = " [" + strings.Join(s.Tags, ", ") + "]"
+			}
+			linkCount := len(s.Links)
+			linkText := ""
+			if linkCount == 1 {
+				linkText = " (1 file)"
+			} else if linkCount > 1 {
+				linkText = fmt.Sprintf(" (%d files)", linkCount)
+			}
+			fmt.Fprintf(&b, "  %s  %s (%s)%s%s\n", s.ID, s.Name, s.Type, tags, linkText)
+		}
+		b.WriteString("\n")
+	}
+
+	// Files index
+	fileSpecs := make(map[string][]string)
+	for _, s := range specs {
+		for _, l := range s.Links {
+			fileSpecs[l.File] = append(fileSpecs[l.File], s.ID)
+		}
+	}
+	if len(fileSpecs) > 0 {
+		files := make([]string, 0, len(fileSpecs))
+		for f := range fileSpecs {
+			files = append(files, f)
+		}
+		sort.Strings(files)
+
+		b.WriteString("── Files ──\n")
+		for _, f := range files {
+			ids := fileSpecs[f]
+			sort.Strings(ids)
+			fmt.Fprintf(&b, "  %s: %s\n", f, strings.Join(ids, ", "))
+		}
+		b.WriteString("\n")
+	}
+
+	return b.String(), nil
 }
