@@ -161,7 +161,30 @@ func removeBSGHooks(path string) error {
 		return err
 	}
 
-	delete(settings, "hooks")
+	existingHooks, _ := settings["hooks"].(map[string]any)
+	if existingHooks == nil {
+		fmt.Println("no BSG hooks found")
+		return nil
+	}
+
+	for hookType, entries := range existingHooks {
+		entryList, _ := entries.([]any)
+		var filtered []any
+		for _, entry := range entryList {
+			if !isBSGHookEntry(entry) {
+				filtered = append(filtered, entry)
+			}
+		}
+		if len(filtered) == 0 {
+			delete(existingHooks, hookType)
+		} else {
+			existingHooks[hookType] = filtered
+		}
+	}
+
+	if len(existingHooks) == 0 {
+		delete(settings, "hooks")
+	}
 
 	if len(settings) == 0 {
 		os.Remove(path)
