@@ -65,7 +65,9 @@ func SetSchemaVersion(db *sql.DB, version int) error {
 		return fmt.Errorf("create schema_version: %w", err)
 	}
 	var count int
-	db.QueryRow(`SELECT count(*) FROM schema_version`).Scan(&count)
+	if err := db.QueryRow(`SELECT count(*) FROM schema_version`).Scan(&count); err != nil {
+		return fmt.Errorf("count schema_version rows: %w", err)
+	}
 	if count == 0 {
 		_, err := db.Exec(`INSERT INTO schema_version (version) VALUES (?)`, version)
 		return err

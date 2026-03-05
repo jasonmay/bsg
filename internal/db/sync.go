@@ -69,7 +69,10 @@ func SyncFromFiles(db *sql.DB, bsgDir string) error {
 	var toDelete []string
 	for rows.Next() {
 		var id string
-		rows.Scan(&id)
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return fmt.Errorf("scan spec id: %w", err)
+		}
 		if !fileIDs[id] {
 			toDelete = append(toDelete, id)
 		}
@@ -77,14 +80,9 @@ func SyncFromFiles(db *sql.DB, bsgDir string) error {
 	rows.Close()
 
 	for _, id := range toDelete {
-		for _, table := range []string{"history", "code_links", "edges"} {
-			if table == "edges" {
-				tx.Exec(fmt.Sprintf("DELETE FROM %s WHERE from_id = ? OR to_id = ?", table), id, id)
-			} else {
-				tx.Exec(fmt.Sprintf("DELETE FROM %s WHERE spec_id = ?", table), id)
-			}
+		if err := cascadeDeleteTx(tx, id); err != nil {
+			return fmt.Errorf("cascade delete %s: %w", id, err)
 		}
-		tx.Exec(`DELETE FROM specs WHERE id = ?`, id)
 	}
 
 	if err := tx.Commit(); err != nil {

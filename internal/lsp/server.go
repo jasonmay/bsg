@@ -80,7 +80,7 @@ func (s *Server) shutdown(ctx *glsp.Context) error {
 
 func (s *Server) textDocumentDidOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocumentParams) error {
 	uri := string(params.TextDocument.URI)
-	s.docs.Open(uri, params.TextDocument.Text)
+	s.docs.Set(uri, params.TextDocument.Text)
 	s.publishDiagnostics(ctx, s.db, uri)
 	return nil
 }
@@ -89,7 +89,7 @@ func (s *Server) textDocumentDidChange(ctx *glsp.Context, params *protocol.DidCh
 	uri := string(params.TextDocument.URI)
 	for _, change := range params.ContentChanges {
 		if c, ok := change.(protocol.TextDocumentContentChangeEventWhole); ok {
-			s.docs.Change(uri, c.Text)
+			s.docs.Set(uri, c.Text)
 		}
 	}
 	return nil
@@ -98,7 +98,7 @@ func (s *Server) textDocumentDidChange(ctx *glsp.Context, params *protocol.DidCh
 func (s *Server) textDocumentDidSave(ctx *glsp.Context, params *protocol.DidSaveTextDocumentParams) error {
 	uri := string(params.TextDocument.URI)
 	if params.Text != nil {
-		s.docs.Change(uri, *params.Text)
+		s.docs.Set(uri, *params.Text)
 	}
 	s.publishDiagnostics(ctx, s.db, uri)
 	return nil

@@ -13,8 +13,6 @@ var syncCmd = &cobra.Command{
 	Short: "Rebuild database from spec files",
 	Long:  "Force resync: deletes the database and rebuilds it from .bsg/specs/*.json files.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		bsgDir := BsgDir()
-
 		DB.Close()
 		DB = nil
 
@@ -26,14 +24,11 @@ var syncCmd = &cobra.Command{
 			return fmt.Errorf("initialize db: %w", err)
 		}
 
+		// Open() detects stale/missing sync marker and rebuilds from spec files
 		var err error
 		DB, err = db.Open(DBPath)
 		if err != nil {
 			return fmt.Errorf("open db: %w", err)
-		}
-
-		if err := db.SyncFromFiles(DB, bsgDir); err != nil {
-			return fmt.Errorf("sync: %w", err)
 		}
 
 		var count int

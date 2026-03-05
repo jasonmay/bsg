@@ -16,13 +16,7 @@ func NewDocumentStore() *DocumentStore {
 	return &DocumentStore{docs: make(map[string]string)}
 }
 
-func (s *DocumentStore) Open(uri, text string) {
-	s.mu.Lock()
-	s.docs[uri] = text
-	s.mu.Unlock()
-}
-
-func (s *DocumentStore) Change(uri, text string) {
+func (s *DocumentStore) Set(uri, text string) {
 	s.mu.Lock()
 	s.docs[uri] = text
 	s.mu.Unlock()

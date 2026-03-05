@@ -21,6 +21,8 @@ func (s *Server) publishDiagnostics(ctx *glsp.Context, database *sql.DB, uri str
 		return
 	}
 
+	driftedIDs := db.GetDriftedIDs(database)
+
 	var diags []protocol.Diagnostic
 	for _, l := range links {
 		spec, err := db.GetSpec(database, l.SpecID)
@@ -30,10 +32,8 @@ func (s *Server) publishDiagnostics(ctx *glsp.Context, database *sql.DB, uri str
 
 		r := linkRange(l)
 		severity := protocol.DiagnosticSeverityInformation
-		if spec.Status == model.StatusVerified {
-			if isDrifted(database, spec) {
-				severity = protocol.DiagnosticSeverityWarning
-			}
+		if spec.Status == model.StatusVerified && driftedIDs[spec.ID] {
+			severity = protocol.DiagnosticSeverityWarning
 		}
 
 		source := "bsg"
@@ -81,15 +81,3 @@ func linkRange(l model.CodeLink) protocol.Range {
 	}
 }
 
-func isDrifted(database *sql.DB, spec *model.Spec) bool {
-	coverage, err := db.GetCoverage(database)
-	if err != nil {
-		return false
-	}
-	for _, d := range coverage.Drifted {
-		if d.Spec.ID == spec.ID {
-			return true
-		}
-	}
-	return false
-}

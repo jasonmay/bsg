@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -62,7 +63,7 @@ func (l *CodeLink) ContainsPosition(line, col int) bool {
 	if l.StartCol != nil {
 		startCol = *l.StartCol
 	}
-	endCol := 999999
+	endCol := math.MaxInt
 	if l.EndCol != nil {
 		endCol = *l.EndCol
 	}

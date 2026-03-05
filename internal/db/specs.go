@@ -21,15 +21,7 @@ type CreateSpecInput struct {
 
 func CreateSpec(db *sql.DB, bsgDir string, in CreateSpecInput) error {
 	now := time.Now().UTC().Format(time.RFC3339)
-	var tagsJSON *string
-	if len(in.Tags) > 0 {
-		b, err := json.Marshal(in.Tags)
-		if err != nil {
-			return fmt.Errorf("marshal tags: %w", err)
-		}
-		s := string(b)
-		tagsJSON = &s
-	}
+	tagsJSON := marshalTags(in.Tags)
 	_, err := db.Exec(
 		`INSERT INTO specs (id, name, type, status, body, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		in.ID, in.Name, string(in.Type), string(model.StatusDraft), in.Body, tagsJSON, now, now,
@@ -52,26 +44,35 @@ func CreateSpec(db *sql.DB, bsgDir string, in CreateSpecInput) error {
 	return nil
 }
 
-func GetSpec(db *sql.DB, id string) (*model.Spec, error) {
+func scanSpec(scanner interface{ Scan(...any) error }) (model.Spec, error) {
 	var s model.Spec
 	var tagsJSON sql.NullString
 	var createdAt, updatedAt string
-	err := db.QueryRow(
-		`SELECT id, name, type, status, body, tags, created_at, updated_at FROM specs WHERE id = ?`,
-		id,
-	).Scan(&s.ID, &s.Name, (*string)(&s.Type), (*string)(&s.Status), &s.Body, &tagsJSON, &createdAt, &updatedAt)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("spec %s not found", id)
-	}
+	err := scanner.Scan(&s.ID, &s.Name, (*string)(&s.Type), (*string)(&s.Status), &s.Body, &tagsJSON, &createdAt, &updatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("get spec: %w", err)
+		return s, err
 	}
 	s.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	s.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
 	if tagsJSON.Valid {
 		if err := json.Unmarshal([]byte(tagsJSON.String), &s.Tags); err != nil {
-			return nil, fmt.Errorf("unmarshal tags: %w", err)
+			return s, fmt.Errorf("unmarshal tags: %w", err)
 		}
+	}
+	return s, nil
+}
+
+func GetSpec(db *sql.DB, id string) (*model.Spec, error) {
+	row := db.QueryRow(
+		`SELECT id, name, type, status, body, tags, created_at, updated_at FROM specs WHERE id = ?`,
+		id,
+	)
+	s, err := scanSpec(row)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("spec %s not found", id)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get spec: %w", err)
 	}
 	return &s, nil
 }
@@ -169,6 +170,22 @@ func UpdateSpec(db *sql.DB, bsgDir string, in UpdateSpecInput) error {
 	return nil
 }
 
+func cascadeDeleteTx(tx *sql.Tx, id string) error {
+	for _, table := range []string{"history", "code_links", "edges"} {
+		if table == "edges" {
+			if _, err := tx.Exec("DELETE FROM edges WHERE from_id = ? OR to_id = ?", id, id); err != nil {
+				return fmt.Errorf("delete from %s: %w", table, err)
+			}
+		} else {
+			if _, err := tx.Exec(fmt.Sprintf("DELETE FROM %s WHERE spec_id = ?", table), id); err != nil {
+				return fmt.Errorf("delete from %s: %w", table, err)
+			}
+		}
+	}
+	_, err := tx.Exec(`DELETE FROM specs WHERE id = ?`, id)
+	return err
+}
+
 func DeleteSpec(db *sql.DB, bsgDir string, id string) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -176,28 +193,12 @@ func DeleteSpec(db *sql.DB, bsgDir string, id string) error {
 	}
 	defer tx.Rollback()
 
-	for _, table := range []string{"history", "code_links", "edges"} {
-		var query string
-		if table == "edges" {
-			query = fmt.Sprintf("DELETE FROM %s WHERE from_id = ? OR to_id = ?", table)
-			if _, err := tx.Exec(query, id, id); err != nil {
-				return fmt.Errorf("delete from %s: %w", table, err)
-			}
-		} else {
-			query = fmt.Sprintf("DELETE FROM %s WHERE spec_id = ?", table)
-			if _, err := tx.Exec(query, id); err != nil {
-				return fmt.Errorf("delete from %s: %w", table, err)
-			}
-		}
+	if !IDExists(db, id) {
+		return fmt.Errorf("spec %s not found", id)
 	}
 
-	res, err := tx.Exec(`DELETE FROM specs WHERE id = ?`, id)
-	if err != nil {
+	if err := cascadeDeleteTx(tx, id); err != nil {
 		return fmt.Errorf("delete spec: %w", err)
-	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return fmt.Errorf("spec %s not found", id)
 	}
 	if err := tx.Commit(); err != nil {
 		return err
@@ -238,16 +239,9 @@ func ListSpecs(db *sql.DB, in ListSpecsInput) ([]model.Spec, error) {
 
 	var specs []model.Spec
 	for rows.Next() {
-		var s model.Spec
-		var tagsJSON sql.NullString
-		var createdAt, updatedAt string
-		if err := rows.Scan(&s.ID, &s.Name, (*string)(&s.Type), (*string)(&s.Status), &s.Body, &tagsJSON, &createdAt, &updatedAt); err != nil {
+		s, err := scanSpec(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan spec: %w", err)
-		}
-		s.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
-		s.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
-		if tagsJSON.Valid {
-			json.Unmarshal([]byte(tagsJSON.String), &s.Tags)
 		}
 		specs = append(specs, s)
 	}
