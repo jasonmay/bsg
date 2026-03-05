@@ -9,7 +9,7 @@ import (
 	"github.com/jasonmay/bsg/internal/model"
 )
 
-func ShowSpec(w io.Writer, s *model.Spec, history []model.HistoryEntry) {
+func ShowSpec(w io.Writer, s *model.Spec, history []model.HistoryEntry, edges []model.Edge) {
 	fmt.Fprintf(w, "%-10s %s\n", "ID:", s.ID)
 	fmt.Fprintf(w, "%-10s %s\n", "Name:", s.Name)
 	fmt.Fprintf(w, "%-10s %s\n", "Type:", s.Type)
@@ -20,6 +20,17 @@ func ShowSpec(w io.Writer, s *model.Spec, history []model.HistoryEntry) {
 	fmt.Fprintf(w, "%-10s %s\n", "Created:", s.CreatedAt.Format("2006-01-02 15:04:05"))
 	fmt.Fprintf(w, "%-10s %s\n", "Updated:", s.UpdatedAt.Format("2006-01-02 15:04:05"))
 	fmt.Fprintf(w, "\n%s\n", s.Body)
+
+	if len(edges) > 0 {
+		fmt.Fprintf(w, "\nEdges:\n")
+		for _, e := range edges {
+			if e.FromID == s.ID {
+				fmt.Fprintf(w, "  -> %s (%s)\n", e.ToID, e.Relation)
+			} else {
+				fmt.Fprintf(w, "  <- %s (%s)\n", e.FromID, e.Relation)
+			}
+		}
+	}
 
 	if len(history) > 0 {
 		fmt.Fprintf(w, "\nHistory:\n")

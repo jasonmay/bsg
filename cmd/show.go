@@ -29,7 +29,12 @@ var showCmd = &cobra.Command{
 			return err
 		}
 
-		display.ShowSpec(os.Stdout, spec, history)
+		edges, err := db.GetEdgesBySpec(DB, args[0])
+		if err != nil {
+			return err
+		}
+
+		display.ShowSpec(os.Stdout, spec, history, edges)
 		return nil
 	},
 }
