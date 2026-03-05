@@ -1,0 +1,17 @@
+{
+  "id": "bsg-1f01",
+  "name": "prime outputs spec coverage context",
+  "type": "behavior",
+  "status": "draft",
+  "body": "bsg prime outputs coverage stats (total, linked, verified), drifted specs with days since verify, ready-to-implement specs (accepted with no code links), and constraint/invariant spec bodies. Supports --json for machine-readable output and --compact for minimal one-line output.",
+  "tags": [
+    "prime",
+    "cli"
+  ],
+  "links": [
+    {
+      "file": "cmd/prime.go",
+      "type": "implements"
+    }
+  ]
+}

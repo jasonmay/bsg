@@ -1,0 +1,17 @@
+{
+  "id": "bsg-b9d6",
+  "name": "init creates .bsg directory structure",
+  "type": "behavior",
+  "status": "draft",
+  "body": "bsg init creates .bsg/ with: bsg.db (SQLite), specs/ dir, .gitignore (excludes db files and .synced), README.md (LLM-facing command reference). Idempotent — reruns update README but preserve existing db. --force reinitializes db from scratch.",
+  "tags": [
+    "init",
+    "cli"
+  ],
+  "links": [
+    {
+      "file": "cmd/init.go",
+      "type": "implements"
+    }
+  ]
+}
