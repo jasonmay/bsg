@@ -82,7 +82,41 @@ func installBSGHooks(path string) error {
 
 	settings["hooks"] = hooks
 
-	return writeSettings(path, settings)
+	if err := writeSettings(path, settings); err != nil {
+		return err
+	}
+
+	return addClaudeMDReference()
+}
+
+const bsgClaudeMDLine = "Refer to .bsg/README.md for BSG (Behavioral Spec Graph) usage and commands."
+
+func addClaudeMDReference() error {
+	claudeMD := "CLAUDE.md"
+	data, err := os.ReadFile(claudeMD)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("read CLAUDE.md: %w", err)
+	}
+
+	if bytes.Contains(data, []byte(".bsg/README.md")) {
+		return nil
+	}
+
+	f, err := os.OpenFile(claudeMD, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("open CLAUDE.md: %w", err)
+	}
+	defer f.Close()
+
+	line := "\n" + bsgClaudeMDLine + "\n"
+	if len(data) == 0 {
+		line = bsgClaudeMDLine + "\n"
+	}
+	if _, err := f.WriteString(line); err != nil {
+		return fmt.Errorf("write CLAUDE.md: %w", err)
+	}
+	fmt.Println("added BSG reference to CLAUDE.md")
+	return nil
 }
 
 func removeBSGHooks(path string) error {

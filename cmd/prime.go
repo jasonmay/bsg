@@ -35,6 +35,8 @@ var primeCmd = &cobra.Command{
 
 func printPrimeFull(stats *db.CoverageStats) error {
 	fmt.Printf("# BSG Spec Context\n")
+	fmt.Println("BSG is an LLM-first spec tracking tool for requirements, expectations, and intentions.")
+	fmt.Println("See .bsg/README.md for commands and workflow.")
 	fmt.Printf("## Coverage: %d specs total, %d with code links, %d verified\n",
 		stats.Total, stats.WithLinks, stats.Verified)
 
