@@ -29,9 +29,10 @@ CREATE TABLE IF NOT EXISTS code_links (
 	start_col   INTEGER,
 	end_line    INTEGER,
 	end_col     INTEGER,
-	created_at  TEXT NOT NULL,
-	PRIMARY KEY (spec_id, file_path, link_type)
+	created_at  TEXT NOT NULL
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_code_links_unique
+	ON code_links (spec_id, file_path, link_type, COALESCE(start_line, 0));
 
 CREATE TABLE IF NOT EXISTS history (
 	id          INTEGER PRIMARY KEY AUTOINCREMENT,

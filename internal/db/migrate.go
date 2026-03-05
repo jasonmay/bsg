@@ -7,6 +7,7 @@ import (
 
 var migrations = []func(*sql.Tx) error{
 	migrateV1RangeColumns,
+	migrateV2RangePK,
 }
 
 func Migrate(db *sql.DB) error {
@@ -71,6 +72,32 @@ func SetSchemaVersion(db *sql.DB, version int) error {
 	}
 	_, err := db.Exec(`UPDATE schema_version SET version = ?`, version)
 	return err
+}
+
+func migrateV2RangePK(tx *sql.Tx) error {
+	stmts := []string{
+		`CREATE TABLE code_links_new (
+			spec_id    TEXT NOT NULL REFERENCES specs(id),
+			file_path  TEXT NOT NULL,
+			symbol     TEXT,
+			link_type  TEXT NOT NULL,
+			start_line INTEGER,
+			start_col  INTEGER,
+			end_line   INTEGER,
+			end_col    INTEGER,
+			created_at TEXT NOT NULL
+		)`,
+		`INSERT INTO code_links_new SELECT spec_id, file_path, symbol, link_type, start_line, start_col, end_line, end_col, created_at FROM code_links`,
+		`DROP TABLE code_links`,
+		`ALTER TABLE code_links_new RENAME TO code_links`,
+		`CREATE UNIQUE INDEX idx_code_links_unique ON code_links (spec_id, file_path, link_type, COALESCE(start_line, 0))`,
+	}
+	for _, q := range stmts {
+		if _, err := tx.Exec(q); err != nil {
+			return fmt.Errorf("%s: %w", q[:40], err)
+		}
+	}
+	return nil
 }
 
 func migrateV1RangeColumns(tx *sql.Tx) error {

@@ -40,13 +40,15 @@ const (
 	StatusImplemented SpecStatus = "implemented"
 	StatusVerified    SpecStatus = "verified"
 	StatusDeprecated  SpecStatus = "deprecated"
+	StatusArchived    SpecStatus = "archived"
 )
 
 var validTransitions = map[SpecStatus][]SpecStatus{
-	StatusDraft:       {StatusAccepted, StatusDeprecated},
-	StatusAccepted:    {StatusImplemented, StatusDeprecated},
-	StatusImplemented: {StatusVerified, StatusDeprecated},
-	StatusVerified:    {StatusDeprecated},
+	StatusDraft:       {StatusAccepted, StatusDeprecated, StatusArchived},
+	StatusAccepted:    {StatusImplemented, StatusDeprecated, StatusArchived},
+	StatusImplemented: {StatusVerified, StatusDeprecated, StatusArchived},
+	StatusVerified:    {StatusDeprecated, StatusArchived},
+	StatusDeprecated:  {StatusArchived},
 }
 
 func ValidateTransition(from, to SpecStatus) error {
