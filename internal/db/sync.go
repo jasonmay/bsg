@@ -12,6 +12,11 @@ import (
 	"github.com/jasonmay/bsg/internal/specfile"
 )
 
+type edgeKey struct {
+	fromID, toID string
+	relation     string
+}
+
 func SyncFromFiles(db *sql.DB, bsgDir string) error {
 	specs, err := specfile.ReadAll(bsgDir)
 	if err != nil {
@@ -59,6 +64,30 @@ func SyncFromFiles(db *sql.DB, bsgDir string) error {
 			if err != nil {
 				return fmt.Errorf("insert link for %s: %w", sf.ID, err)
 			}
+		}
+	}
+
+	// Sync edges: collect all "out" edges from JSON, replace DB edges
+	fileEdges := make(map[edgeKey]bool)
+	for _, sf := range specs {
+		for _, ef := range sf.Edges {
+			if ef.Dir != "out" {
+				continue
+			}
+			k := edgeKey{fromID: sf.ID, toID: ef.Spec, relation: ef.Relation}
+			fileEdges[k] = true
+		}
+	}
+	if _, err := tx.Exec(`DELETE FROM edges`); err != nil {
+		return fmt.Errorf("clear edges: %w", err)
+	}
+	for k := range fileEdges {
+		_, err := tx.Exec(
+			`INSERT INTO edges (from_id, to_id, relation, created_at) VALUES (?, ?, ?, ?)`,
+			k.fromID, k.toID, k.relation, now,
+		)
+		if err != nil {
+			return fmt.Errorf("insert edge %s->%s: %w", k.fromID, k.toID, err)
 		}
 	}
 
