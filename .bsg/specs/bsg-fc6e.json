@@ -2,7 +2,7 @@
   "id": "bsg-fc6e",
   "name": "setup claude installs Claude Code hooks",
   "type": "behavior",
-  "status": "draft",
+  "status": "verified",
   "body": "bsg setup claude writes hooks to .claude/settings.json: SessionStart runs bsg prime, PreCompact and Stop run bsg prime --compact, PreToolUse on Edit|Write runs bsg check-file. Adds .bsg/README.md reference to CLAUDE.md. --remove strips BSG hooks while preserving non-BSG hooks. --dry-run shows output without writing. All hook commands fail silently (2\u003e/dev/null || true).",
   "tags": [
     "setup",

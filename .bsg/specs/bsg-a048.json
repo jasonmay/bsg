@@ -2,10 +2,19 @@
   "id": "bsg-a048",
   "name": "use embedded files instead of large string literals",
   "type": "constraint",
-  "status": "draft",
+  "status": "verified",
   "body": "Large text content (templates, README content, etc.) must use go:embed with external files rather than string literals or raw string constants. This keeps the Go source readable, makes the content editable with proper syntax highlighting, and avoids backtick escaping issues.",
   "tags": [
     "code-quality",
     "go"
+  ],
+  "links": [
+    {
+      "file": "cmd/init.go",
+      "type": "implements",
+      "scope": "range",
+      "start_line": 15,
+      "end_line": 15
+    }
   ]
 }
