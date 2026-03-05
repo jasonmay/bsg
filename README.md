@@ -46,6 +46,8 @@ bsg prime
 | `bsg show <id>` | Display a spec, its links, and history |
 | `bsg status <id> <status>` | Transition spec status |
 | `bsg delete <id>` | Delete a spec and its links |
+| `bsg link <id> --depends-on <id>` | Create a spec-to-spec relationship |
+| `bsg unlink <from> <to>` | Remove spec-to-spec relationships |
 | `bsg trace <id> --file <path>` | Link a spec to code |
 | `bsg untrace <id> <file>` | Remove a code link |
 | `bsg prime` | Show spec coverage, drifted specs, and what's ready |
@@ -63,6 +65,27 @@ echo "Long description..." | bsg add "Spec name" --type behavior  # reads from s
 ```
 
 Flags: `--type` (required), `--body`, `--tag` (comma-separated)
+
+### `bsg link`
+
+Create directed relationships between specs:
+
+```bash
+bsg link bsg-a3f2 --depends-on bsg-b1c4
+bsg link bsg-a3f2 --refines bsg-0012
+bsg link bsg-a3f2 --conflicts-with bsg-c5d6
+bsg link bsg-a3f2 --implements bsg-e7f8
+bsg link bsg-a3f2 --supersedes bsg-9a0b
+```
+
+Exactly one relation flag is required. `depends_on` edges are cycle-checked.
+
+### `bsg unlink`
+
+```bash
+bsg unlink bsg-a3f2 bsg-b1c4                    # remove all edges between them
+bsg unlink bsg-a3f2 bsg-b1c4 --relation refines  # remove specific relation
+```
 
 ### `bsg trace`
 
@@ -86,6 +109,20 @@ Link type via `--as`: `implements` (default), `tests`, `documents`
 | `interface` | API contracts — endpoints, function signatures, protocols, data formats |
 | `data-shape` | Data structures — schemas, models, field definitions, relationships |
 | `invariant` | Things that must always be true — consistency rules, ordering guarantees |
+
+## Spec Relationships
+
+Specs can be connected with directed edges:
+
+| Relation | Meaning |
+|----------|---------|
+| `depends_on` | A requires B to be implemented first (cycle-checked) |
+| `refines` | A clarifies or narrows B |
+| `conflicts_with` | A and B cannot both hold |
+| `implements` | A fulfills B |
+| `supersedes` | A replaces B |
+
+Edges appear in both specs' JSON files — as `"out"` on the source and `"in"` on the target — so reading one file gives full relationship context. `bsg summarize` shows all relationships.
 
 ## Spec Lifecycle
 
@@ -135,6 +172,10 @@ Specs live as JSON files in `.bsg/specs/<id>.json`:
   "tags": ["weight", "input"],
   "links": [
     {"file": "src/weight.go", "symbol": "Validate", "type": "implements"}
+  ],
+  "edges": [
+    {"spec": "bsg-b1c4", "relation": "depends_on", "dir": "out"},
+    {"spec": "bsg-0012", "relation": "refines", "dir": "in"}
   ]
 }
 ```
