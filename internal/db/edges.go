@@ -94,6 +94,65 @@ func GetEdgesBySpec(db *sql.DB, specID string) ([]model.Edge, error) {
 	return edges, rows.Err()
 }
 
+type UpstreamSpec struct {
+	Spec     model.Spec
+	ViaSpec  string
+	Relation model.Relation
+}
+
+func GetUpstreamSpecs(db *sql.DB, specIDs []string) ([]UpstreamSpec, error) {
+	visited := make(map[string]bool)
+	var results []UpstreamSpec
+
+	queue := make([]string, len(specIDs))
+	copy(queue, specIDs)
+	for _, id := range specIDs {
+		visited[id] = true
+	}
+
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		rows, err := db.Query(
+			`SELECT from_id, to_id, relation FROM edges WHERE from_id = ? OR to_id = ?`,
+			current, current,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("query edges for %s: %w", current, err)
+		}
+		for rows.Next() {
+			var fromID, toID, relation string
+			if err := rows.Scan(&fromID, &toID, &relation); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("scan edge: %w", err)
+			}
+			// The "upstream" spec is the other end of the edge
+			other := toID
+			if other == current {
+				other = fromID
+			}
+			if visited[other] {
+				continue
+			}
+			visited[other] = true
+
+			spec, err := GetSpec(db, other)
+			if err != nil {
+				continue
+			}
+			results = append(results, UpstreamSpec{
+				Spec:     *spec,
+				ViaSpec:  current,
+				Relation: model.Relation(relation),
+			})
+			queue = append(queue, other)
+		}
+		rows.Close()
+	}
+	return results, nil
+}
+
 func checkCycle(db *sql.DB, fromID, toID string) error {
 	visited := make(map[string]bool)
 	stack := []string{toID}

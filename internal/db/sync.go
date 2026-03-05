@@ -56,10 +56,14 @@ func SyncFromFiles(db *sql.DB, bsgDir string) error {
 			if linkType == "" {
 				linkType = string(model.LinkImplements)
 			}
+			scope := l.Scope
+			if scope == "" {
+				scope = string(model.ScopeFile)
+			}
 			_, err := tx.Exec(
-				`INSERT INTO code_links (spec_id, file_path, symbol, link_type, start_line, start_col, end_line, end_col, created_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				sf.ID, l.File, l.Symbol, linkType, l.StartLine, l.StartCol, l.EndLine, l.EndCol, now,
+				`INSERT INTO code_links (spec_id, file_path, symbol, link_type, scope, start_line, start_col, end_line, end_col, created_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				sf.ID, l.File, l.Symbol, linkType, scope, l.StartLine, l.StartCol, l.EndLine, l.EndCol, now,
 			)
 			if err != nil {
 				return fmt.Errorf("insert link for %s: %w", sf.ID, err)

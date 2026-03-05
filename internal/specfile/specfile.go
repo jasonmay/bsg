@@ -41,6 +41,7 @@ type LinkFile struct {
 	File      string `json:"file"`
 	Symbol    string `json:"symbol,omitempty"`
 	Type      string `json:"type"`
+	Scope     string `json:"scope,omitempty"`
 	StartLine *int   `json:"start_line,omitempty"`
 	StartCol  *int   `json:"start_col,omitempty"`
 	EndLine   *int   `json:"end_line,omitempty"`
@@ -71,10 +72,15 @@ func WriteSpec(bsgDir string, spec *model.Spec, links []model.CodeLink, edges []
 	}
 
 	for _, l := range links {
+		scope := string(l.Scope)
+		if scope == "file" {
+			scope = ""
+		}
 		lf := LinkFile{
 			File:      l.FilePath,
 			Symbol:    l.Symbol,
 			Type:      string(l.LinkType),
+			Scope:     scope,
 			StartLine: l.StartLine,
 			StartCol:  l.StartCol,
 			EndLine:   l.EndLine,
