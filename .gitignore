@@ -1,2 +1,7 @@
-bsg
-.bsg/
+/bsg
+.bsg/bsg.db
+.bsg/bsg.db-wal
+.bsg/bsg.db-shm
+.bsg/specs/.synced
+examples/**/.bsg/
+examples/mud/mud
