@@ -1,0 +1,20 @@
+{
+  "id": "bsg-5dc8",
+  "name": "README and prime reflect all commands and features",
+  "type": "invariant",
+  "status": "draft",
+  "body": "When a command, flag, scope level, or feature is added or changed, the embedded README template (cmd/bsg_readme.md) and prime output must be updated in the same changeset. README must document all commands with current flags, all spec types, all relationship types, all scope levels, and trace syntax. Prime must surface enough context for an LLM agent to understand the spec graph.",
+  "tags": [
+    "documentation"
+  ],
+  "links": [
+    {
+      "file": "cmd/bsg_readme.md",
+      "type": "implements"
+    },
+    {
+      "file": "cmd/prime.go",
+      "type": "implements"
+    }
+  ]
+}
