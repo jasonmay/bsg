@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jasonmay/bsg/internal/model"
+	"github.com/jasonmay/bsg/internal/specfile"
 )
 
 type CreateLinkInput struct {
@@ -19,7 +20,7 @@ type CreateLinkInput struct {
 	EndCol    *int
 }
 
-func CreateLink(db *sql.DB, in CreateLinkInput) error {
+func CreateLink(db *sql.DB, bsgDir string, in CreateLinkInput) error {
 	now := time.Now().UTC().Format(time.RFC3339)
 	_, err := db.Exec(
 		`INSERT INTO code_links (spec_id, file_path, symbol, link_type, start_line, start_col, end_line, end_col, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -28,10 +29,10 @@ func CreateLink(db *sql.DB, in CreateLinkInput) error {
 	if err != nil {
 		return fmt.Errorf("insert code link: %w", err)
 	}
-	return nil
+	return exportSpecFile(db, bsgDir, in.SpecID)
 }
 
-func DeleteLink(db *sql.DB, specID, filePath string) error {
+func DeleteLink(db *sql.DB, bsgDir string, specID, filePath string) error {
 	res, err := db.Exec(
 		`DELETE FROM code_links WHERE spec_id = ? AND file_path = ?`,
 		specID, filePath,
@@ -43,7 +44,19 @@ func DeleteLink(db *sql.DB, specID, filePath string) error {
 	if n == 0 {
 		return fmt.Errorf("no link found for %s -> %s", specID, filePath)
 	}
-	return nil
+	return exportSpecFile(db, bsgDir, specID)
+}
+
+func exportSpecFile(db *sql.DB, bsgDir string, specID string) error {
+	spec, err := GetSpec(db, specID)
+	if err != nil {
+		return fmt.Errorf("get spec for export: %w", err)
+	}
+	links, err := GetLinksBySpec(db, specID)
+	if err != nil {
+		return fmt.Errorf("get links for export: %w", err)
+	}
+	return specfile.WriteSpec(bsgDir, spec, links)
 }
 
 func GetLinksBySpec(db *sql.DB, specID string) ([]model.CodeLink, error) {

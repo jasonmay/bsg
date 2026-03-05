@@ -49,7 +49,7 @@ var addCmd = &cobra.Command{
 			return db.IDExists(DB, candidate)
 		})
 
-		err = db.CreateSpec(DB, db.CreateSpecInput{
+		err = db.CreateSpec(DB, BsgDir(), db.CreateSpecInput{
 			ID:   specID,
 			Name: name,
 			Type: specType,

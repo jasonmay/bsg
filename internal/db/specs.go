@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jasonmay/bsg/internal/model"
+	"github.com/jasonmay/bsg/internal/specfile"
 )
 
 type CreateSpecInput struct {
@@ -18,7 +19,7 @@ type CreateSpecInput struct {
 	Tags []string
 }
 
-func CreateSpec(db *sql.DB, in CreateSpecInput) error {
+func CreateSpec(db *sql.DB, bsgDir string, in CreateSpecInput) error {
 	now := time.Now().UTC().Format(time.RFC3339)
 	var tagsJSON *string
 	if len(in.Tags) > 0 {
@@ -35,6 +36,18 @@ func CreateSpec(db *sql.DB, in CreateSpecInput) error {
 	)
 	if err != nil {
 		return fmt.Errorf("insert spec: %w", err)
+	}
+
+	spec := &model.Spec{
+		ID:     in.ID,
+		Name:   in.Name,
+		Type:   in.Type,
+		Status: model.StatusDraft,
+		Body:   in.Body,
+		Tags:   in.Tags,
+	}
+	if err := specfile.WriteSpec(bsgDir, spec, nil); err != nil {
+		return fmt.Errorf("write spec file: %w", err)
 	}
 	return nil
 }
@@ -77,7 +90,7 @@ type UpdateSpecInput struct {
 	Status *model.SpecStatus
 }
 
-func UpdateSpec(db *sql.DB, in UpdateSpecInput) error {
+func UpdateSpec(db *sql.DB, bsgDir string, in UpdateSpecInput) error {
 	existing, err := GetSpec(db, in.ID)
 	if err != nil {
 		return err
@@ -138,10 +151,25 @@ func UpdateSpec(db *sql.DB, in UpdateSpecInput) error {
 		return fmt.Errorf("update spec: %w", err)
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	spec, err := GetSpec(db, in.ID)
+	if err != nil {
+		return fmt.Errorf("re-read spec for export: %w", err)
+	}
+	links, err := GetLinksBySpec(db, in.ID)
+	if err != nil {
+		return fmt.Errorf("get links for export: %w", err)
+	}
+	if err := specfile.WriteSpec(bsgDir, spec, links); err != nil {
+		return fmt.Errorf("write spec file: %w", err)
+	}
+	return nil
 }
 
-func DeleteSpec(db *sql.DB, id string) error {
+func DeleteSpec(db *sql.DB, bsgDir string, id string) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -171,7 +199,10 @@ func DeleteSpec(db *sql.DB, id string) error {
 	if n == 0 {
 		return fmt.Errorf("spec %s not found", id)
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return specfile.DeleteSpec(bsgDir, id)
 }
 
 type ListSpecsInput struct {

@@ -45,7 +45,7 @@ func TestSpecCRUD(t *testing.T) {
 	defer db.Close()
 
 	// Create
-	err = CreateSpec(db, CreateSpecInput{
+	err = CreateSpec(db, dir, CreateSpecInput{
 		ID:   "bsg-0001",
 		Name: "Test Spec",
 		Type: model.SpecTypeBehavior,
@@ -73,7 +73,7 @@ func TestSpecCRUD(t *testing.T) {
 
 	// Update
 	newName := "Updated Spec"
-	err = UpdateSpec(db, UpdateSpecInput{ID: "bsg-0001", Name: &newName})
+	err = UpdateSpec(db, dir, UpdateSpecInput{ID: "bsg-0001", Name: &newName})
 	if err != nil {
 		t.Fatalf("update: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestSpecCRUD(t *testing.T) {
 	}
 
 	// Delete
-	if err := DeleteSpec(db, "bsg-0001"); err != nil {
+	if err := DeleteSpec(db, dir, "bsg-0001"); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
 	_, err = GetSpec(db, "bsg-0001")

@@ -141,7 +141,7 @@ Examples:
 			return fmt.Errorf("spec %s: %w", specID, err)
 		}
 
-		err = db.CreateLink(DB, db.CreateLinkInput{
+		err = db.CreateLink(DB, BsgDir(), db.CreateLinkInput{
 			SpecID:    spec.ID,
 			FilePath:  parsed.FilePath,
 			Symbol:    parsed.Symbol,
@@ -180,7 +180,7 @@ var untraceCmd = &cobra.Command{
 		specID := args[0]
 		filePath := args[1]
 
-		if err := db.DeleteLink(DB, specID, filePath); err != nil {
+		if err := db.DeleteLink(DB, BsgDir(), specID, filePath); err != nil {
 			return err
 		}
 		fmt.Printf("untraced %s -> %s\n", specID, filePath)

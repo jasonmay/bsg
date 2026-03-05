@@ -26,6 +26,15 @@ func Open(path string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
+
+	bsgDir := filepath.Dir(path)
+	if NeedsSync(bsgDir) {
+		if err := SyncFromFiles(db, bsgDir); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("sync from files: %w", err)
+		}
+	}
+
 	return db, nil
 }
 
@@ -52,6 +61,13 @@ func FindDB() (string, error) {
 	for {
 		candidate := filepath.Join(dir, ".bsg", "bsg.db")
 		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+		specsDir := filepath.Join(dir, ".bsg", "specs")
+		if info, err := os.Stat(specsDir); err == nil && info.IsDir() {
+			if err := Initialize(candidate); err != nil {
+				return "", fmt.Errorf("initialize db from specs: %w", err)
+			}
 			return candidate, nil
 		}
 		parent := filepath.Dir(dir)
