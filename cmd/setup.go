@@ -25,7 +25,7 @@ var setupClaudeCmd = &cobra.Command{
 	Use:   "claude",
 	Short: "Install Claude Code hooks for BSG",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		settingsPath := filepath.Join(".claude", "settings.json")
+		settingsPath := filepath.Join(".claude", "settings.local.json")
 
 		if setupRemove {
 			return removeBSGHooks(settingsPath)
