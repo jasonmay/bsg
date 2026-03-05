@@ -7,11 +7,5 @@
   "tags": [
     "code-quality",
     "go"
-  ],
-  "links": [
-    {
-      "file": "cmd/init.go",
-      "type": "implements"
-    }
   ]
 }
