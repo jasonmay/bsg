@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -80,13 +81,48 @@ func installBSGHooks(path string) error {
 		},
 	}
 
-	settings["hooks"] = hooks
+	existingHooks, _ := settings["hooks"].(map[string]any)
+	if existingHooks == nil {
+		existingHooks = make(map[string]any)
+	}
+
+	for hookType, entries := range hooks {
+		bsgEntries, _ := entries.([]any)
+		existingEntries, _ := existingHooks[hookType].([]any)
+
+		// Remove existing BSG entries, then append new ones
+		var filtered []any
+		for _, entry := range existingEntries {
+			if !isBSGHookEntry(entry) {
+				filtered = append(filtered, entry)
+			}
+		}
+		existingHooks[hookType] = append(filtered, bsgEntries...)
+	}
+
+	settings["hooks"] = existingHooks
 
 	if err := writeSettings(path, settings); err != nil {
 		return err
 	}
 
 	return addClaudeMDReference()
+}
+
+func isBSGHookEntry(entry any) bool {
+	m, ok := entry.(map[string]any)
+	if !ok {
+		return false
+	}
+	hooks, _ := m["hooks"].([]any)
+	for _, h := range hooks {
+		hm, _ := h.(map[string]any)
+		cmd, _ := hm["command"].(string)
+		if strings.Contains(cmd, "bsg ") {
+			return true
+		}
+	}
+	return false
 }
 
 const bsgClaudeMDLine = "Refer to .bsg/README.md for BSG (Behavioral Spec Graph) usage and commands."
