@@ -39,11 +39,17 @@ func Open(path string) (*sql.DB, error) {
 }
 
 func Initialize(path string) error {
-	db, err := Open(path)
+	db, err := sql.Open("sqlite", path)
 	if err != nil {
-		return err
+		return fmt.Errorf("open %s: %w", path, err)
 	}
 	defer db.Close()
+	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
+		return fmt.Errorf("set WAL mode: %w", err)
+	}
+	if _, err := db.Exec("PRAGMA foreign_keys=ON"); err != nil {
+		return fmt.Errorf("enable foreign keys: %w", err)
+	}
 	if _, err := db.Exec(Schema); err != nil {
 		return fmt.Errorf("create schema: %w", err)
 	}

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/jasonmay/bsg/internal/db"
 	"github.com/spf13/cobra"
@@ -24,7 +25,9 @@ var syncCmd = &cobra.Command{
 			return fmt.Errorf("initialize db: %w", err)
 		}
 
-		// Open() detects stale/missing sync marker and rebuilds from spec files
+		// Remove sync marker after Initialize so Open() triggers SyncFromFiles
+		os.Remove(filepath.Join(BsgDir(), "specs", ".synced"))
+
 		var err error
 		DB, err = db.Open(DBPath)
 		if err != nil {
