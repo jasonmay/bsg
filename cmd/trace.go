@@ -5,10 +5,27 @@ import (
 	"strconv"
 	"strings"
 
+
 	"github.com/jasonmay/bsg/internal/db"
 	"github.com/jasonmay/bsg/internal/model"
 	"github.com/spf13/cobra"
 )
+
+func inferScope(parsed parsedFileArg) model.LinkScope {
+	if parsed.FilePath == "." {
+		return model.ScopeCodebase
+	}
+	if strings.HasSuffix(parsed.FilePath, "/") {
+		return model.ScopeDirectory
+	}
+	if parsed.Symbol != "" {
+		return model.ScopeSymbol
+	}
+	if parsed.StartLine != nil {
+		return model.ScopeRange
+	}
+	return model.ScopeFile
+}
 
 type parsedFileArg struct {
 	FilePath  string
@@ -141,11 +158,14 @@ Examples:
 			return fmt.Errorf("spec %s: %w", specID, err)
 		}
 
+		scope := inferScope(parsed)
+
 		err = db.CreateLink(DB, BsgDir(), db.CreateLinkInput{
 			SpecID:    spec.ID,
 			FilePath:  parsed.FilePath,
 			Symbol:    parsed.Symbol,
 			LinkType:  linkType,
+			Scope:     scope,
 			StartLine: parsed.StartLine,
 			StartCol:  parsed.StartCol,
 			EndLine:   parsed.EndLine,

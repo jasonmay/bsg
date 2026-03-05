@@ -14,36 +14,36 @@ var checkFileCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filePath := args[0]
 
-		links, err := db.GetLinksByFile(DB, filePath)
+		results, err := db.GetSpecsForLocation(DB, filePath, 0, 0)
 		if err != nil {
 			return err
 		}
 
-		if len(links) == 0 {
+		if len(results) == 0 {
 			return nil
 		}
 
 		fmt.Println("# Linked specs:")
-		for _, l := range links {
-			spec, err := db.GetSpec(DB, l.SpecID)
-			if err != nil {
-				continue
-			}
+		for _, r := range results {
 			suffix := ""
-			if l.Symbol != "" {
-				suffix = ":" + l.Symbol
+			if r.Link.Symbol != "" {
+				suffix = ":" + r.Link.Symbol
 			}
-			if r := l.RangeString(); r != "" {
+			if rs := r.Link.RangeString(); rs != "" {
 				if suffix != "" {
-					suffix += " " + r
+					suffix += " " + rs
 				} else {
-					suffix = " " + r
+					suffix = " " + rs
 				}
 			}
-			fmt.Printf("#   %s %q [%s] — %s%s\n",
-				spec.ID, spec.Name, spec.Status, l.LinkType, suffix)
-			if spec.Body != "" {
-				fmt.Printf("#     %s\n", spec.Body)
+			scopeTag := ""
+			if r.Scope != "file" {
+				scopeTag = fmt.Sprintf(" [%s]", r.Scope)
+			}
+			fmt.Printf("#   %s %q [%s] — %s%s%s\n",
+				r.Spec.ID, r.Spec.Name, r.Spec.Status, r.Link.LinkType, suffix, scopeTag)
+			if r.Spec.Body != "" {
+				fmt.Printf("#     %s\n", r.Spec.Body)
 			}
 		}
 		return nil
