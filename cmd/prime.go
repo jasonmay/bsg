@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/jasonmay/bsg/internal/db"
+	"github.com/jasonmay/bsg/internal/model"
 	"github.com/spf13/cobra"
 )
 
@@ -54,6 +55,23 @@ func printPrimeFull(stats *db.CoverageStats) error {
 		fmt.Printf("## Ready to implement (%d):\n", len(stats.ReadyToImpl))
 		for _, s := range stats.ReadyToImpl {
 			fmt.Printf("  %s %q [accepted, no code links]\n", s.ID, s.Name)
+		}
+	}
+
+	for _, specType := range []model.SpecType{model.SpecTypeConstraint, model.SpecTypeInvariant} {
+		specs, err := db.ListSpecs(DB, db.ListSpecsInput{Type: &specType})
+		if err != nil {
+			return err
+		}
+		if len(specs) == 0 {
+			continue
+		}
+		fmt.Printf("## %ss (%d):\n", specType, len(specs))
+		for _, s := range specs {
+			fmt.Printf("  %s %q [%s]\n", s.ID, s.Name, s.Status)
+			if s.Body != "" {
+				fmt.Printf("    %s\n", s.Body)
+			}
 		}
 	}
 
