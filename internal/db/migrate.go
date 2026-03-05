@@ -8,6 +8,7 @@ import (
 var migrations = []func(*sql.Tx) error{
 	migrateV1RangeColumns,
 	migrateV2RangePK,
+	migrateV3Scope,
 }
 
 func Migrate(db *sql.DB) error {
@@ -93,6 +94,20 @@ func migrateV2RangePK(tx *sql.Tx) error {
 		`DROP TABLE code_links`,
 		`ALTER TABLE code_links_new RENAME TO code_links`,
 		`CREATE UNIQUE INDEX idx_code_links_unique ON code_links (spec_id, file_path, link_type, COALESCE(start_line, 0))`,
+	}
+	for _, q := range stmts {
+		if _, err := tx.Exec(q); err != nil {
+			return fmt.Errorf("%s: %w", q[:40], err)
+		}
+	}
+	return nil
+}
+
+func migrateV3Scope(tx *sql.Tx) error {
+	stmts := []string{
+		`ALTER TABLE code_links ADD COLUMN scope TEXT NOT NULL DEFAULT 'file'`,
+		`UPDATE code_links SET scope = 'symbol' WHERE symbol != '' AND start_line IS NULL`,
+		`UPDATE code_links SET scope = 'range' WHERE start_line IS NOT NULL`,
 	}
 	for _, q := range stmts {
 		if _, err := tx.Exec(q); err != nil {

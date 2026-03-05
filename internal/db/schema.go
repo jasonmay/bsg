@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS code_links (
 	file_path   TEXT NOT NULL,
 	symbol      TEXT,
 	link_type   TEXT NOT NULL,
+	scope       TEXT NOT NULL DEFAULT 'file',
 	start_line  INTEGER,
 	start_col   INTEGER,
 	end_line    INTEGER,

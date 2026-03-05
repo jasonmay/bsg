@@ -20,6 +20,16 @@ var ValidLinkTypes = []LinkType{
 	LinkDocuments,
 }
 
+type LinkScope string
+
+const (
+	ScopeCodebase  LinkScope = "codebase"
+	ScopeDirectory LinkScope = "directory"
+	ScopeFile      LinkScope = "file"
+	ScopeRange     LinkScope = "range"
+	ScopeSymbol    LinkScope = "symbol"
+)
+
 func ParseLinkType(s string) (LinkType, error) {
 	for _, lt := range ValidLinkTypes {
 		if string(lt) == s {
@@ -34,6 +44,7 @@ type CodeLink struct {
 	FilePath  string
 	Symbol    string
 	LinkType  LinkType
+	Scope     LinkScope
 	StartLine *int
 	StartCol  *int
 	EndLine   *int
