@@ -57,7 +57,7 @@ func installBSGHooks(path string) error {
 				},
 			},
 		},
-		"PostToolUse": []any{
+		"PreToolUse": []any{
 			map[string]any{
 				"matcher": "Edit|Write",
 				"hooks": []any{
