@@ -19,7 +19,7 @@ func setupBsgDir(t *testing.T) string {
 
 func writeTestSpec(t *testing.T, bsgDir string, spec *model.Spec, links []model.CodeLink) {
 	t.Helper()
-	if err := WriteSpec(bsgDir, spec, links); err != nil {
+	if err := WriteSpec(bsgDir, spec, links, nil); err != nil {
 		t.Fatalf("WriteSpec(%s): %v", spec.ID, err)
 	}
 }

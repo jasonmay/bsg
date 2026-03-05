@@ -28,6 +28,13 @@ type SpecFile struct {
 	Body   string     `json:"body"`
 	Tags   []string   `json:"tags,omitempty"`
 	Links  []LinkFile `json:"links,omitempty"`
+	Edges  []EdgeFile `json:"edges,omitempty"`
+}
+
+type EdgeFile struct {
+	Spec     string `json:"spec"`
+	Relation string `json:"relation"`
+	Dir      string `json:"dir"`
 }
 
 type LinkFile struct {
@@ -48,7 +55,7 @@ func SpecDir(bsgDir string) (string, error) {
 	return dir, nil
 }
 
-func WriteSpec(bsgDir string, spec *model.Spec, links []model.CodeLink) error {
+func WriteSpec(bsgDir string, spec *model.Spec, links []model.CodeLink, edges []model.Edge) error {
 	dir, err := SpecDir(bsgDir)
 	if err != nil {
 		return err
@@ -74,6 +81,18 @@ func WriteSpec(bsgDir string, spec *model.Spec, links []model.CodeLink) error {
 			EndCol:    l.EndCol,
 		}
 		sf.Links = append(sf.Links, lf)
+	}
+
+	for _, e := range edges {
+		ef := EdgeFile{Relation: string(e.Relation)}
+		if e.FromID == spec.ID {
+			ef.Spec = e.ToID
+			ef.Dir = "out"
+		} else {
+			ef.Spec = e.FromID
+			ef.Dir = "in"
+		}
+		sf.Edges = append(sf.Edges, ef)
 	}
 
 	data, err := json.MarshalIndent(sf, "", "  ")
@@ -203,6 +222,32 @@ func Summarize(bsgDir string) (string, error) {
 			ids := fileSpecs[f]
 			sort.Strings(ids)
 			fmt.Fprintf(&b, "  %s: %s\n", f, strings.Join(ids, ", "))
+		}
+		b.WriteString("\n")
+	}
+
+	// Relationships
+	type edgeEntry struct {
+		from, to, relation string
+	}
+	var allEdges []edgeEntry
+	for _, s := range specs {
+		for _, e := range s.Edges {
+			if e.Dir == "out" {
+				allEdges = append(allEdges, edgeEntry{from: s.ID, to: e.Spec, relation: e.Relation})
+			}
+		}
+	}
+	if len(allEdges) > 0 {
+		sort.Slice(allEdges, func(i, j int) bool {
+			if allEdges[i].from != allEdges[j].from {
+				return allEdges[i].from < allEdges[j].from
+			}
+			return allEdges[i].to < allEdges[j].to
+		})
+		b.WriteString("── Relationships ──\n")
+		for _, e := range allEdges {
+			fmt.Fprintf(&b, "  %s --%s--> %s\n", e.from, e.relation, e.to)
 		}
 		b.WriteString("\n")
 	}
