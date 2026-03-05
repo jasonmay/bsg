@@ -42,6 +42,9 @@ var checkFileCmd = &cobra.Command{
 			}
 			fmt.Printf("#   %s %q [%s] — %s%s\n",
 				spec.ID, spec.Name, spec.Status, l.LinkType, suffix)
+			if spec.Body != "" {
+				fmt.Printf("#     %s\n", spec.Body)
+			}
 		}
 		return nil
 	},
