@@ -13,13 +13,14 @@ var statusCmd = &cobra.Command{
 	Short: "Transition a spec's status",
 	Long: `Move a spec through its lifecycle.
 
-Valid statuses: draft, accepted, implemented, verified, deprecated, archived
+Valid statuses: draft, accepted, implemented, verified, paused, deprecated, archived
 
 Transitions:
-  draft       -> accepted, deprecated, archived
-  accepted    -> implemented, deprecated, archived
-  implemented -> verified, deprecated, archived
+  draft       -> accepted, paused, deprecated, archived
+  accepted    -> implemented, paused, deprecated, archived
+  implemented -> verified, paused, deprecated, archived
   verified    -> deprecated, archived
+  paused      -> draft, accepted, implemented, deprecated, archived
   deprecated  -> archived`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {

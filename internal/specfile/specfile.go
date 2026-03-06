@@ -16,6 +16,7 @@ var statusOrder = []string{
 	string(model.StatusAccepted),
 	string(model.StatusImplemented),
 	string(model.StatusVerified),
+	string(model.StatusPaused),
 	string(model.StatusDeprecated),
 	string(model.StatusArchived),
 }

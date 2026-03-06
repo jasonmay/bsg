@@ -132,6 +132,8 @@ Edges appear in both specs' JSON files — as `"out"` on the source and `"in"` o
 draft → accepted → implemented → verified → deprecated → archived
 ```
 
+Any pre-verification status (`draft`, `accepted`, `implemented`) can transition to `paused`.
+Paused specs can resume to `draft`, `accepted`, or `implemented`.
 Any status can also transition directly to `archived`.
 
 ## Drift Detection

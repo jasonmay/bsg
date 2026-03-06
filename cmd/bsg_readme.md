@@ -43,6 +43,8 @@ generated ID to stdout. All other commands use this ID, not the spec name.
 
 draft -> accepted -> implemented -> verified -> deprecated -> archived
 
+Any pre-verification status (draft, accepted, implemented) can transition to paused.
+Paused specs can resume to draft, accepted, or implemented.
 Any status can also transition directly to archived.
 
 ## Trace syntax

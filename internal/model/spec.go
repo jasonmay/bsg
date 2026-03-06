@@ -41,13 +41,15 @@ const (
 	StatusVerified    SpecStatus = "verified"
 	StatusDeprecated  SpecStatus = "deprecated"
 	StatusArchived    SpecStatus = "archived"
+	StatusPaused      SpecStatus = "paused"
 )
 
 var validTransitions = map[SpecStatus][]SpecStatus{
-	StatusDraft:       {StatusAccepted, StatusDeprecated, StatusArchived},
-	StatusAccepted:    {StatusImplemented, StatusDeprecated, StatusArchived},
-	StatusImplemented: {StatusVerified, StatusDeprecated, StatusArchived},
+	StatusDraft:       {StatusAccepted, StatusPaused, StatusDeprecated, StatusArchived},
+	StatusAccepted:    {StatusImplemented, StatusPaused, StatusDeprecated, StatusArchived},
+	StatusImplemented: {StatusVerified, StatusPaused, StatusDeprecated, StatusArchived},
 	StatusVerified:    {StatusDeprecated, StatusArchived},
+	StatusPaused:      {StatusDraft, StatusAccepted, StatusImplemented, StatusDeprecated, StatusArchived},
 	StatusDeprecated:  {StatusArchived},
 }
 
