@@ -135,15 +135,17 @@ func UpdateSpec(db *sql.DB, bsgDir string, in UpdateSpecInput) error {
 		}
 	}
 
-	if in.Status != nil && *in.Status != existing.Status {
+	if in.Status != nil {
 		if err := model.ValidateTransition(existing.Status, *in.Status); err != nil {
 			return err
+		}
+		if *in.Status != existing.Status {
+			sets = append(sets, "status = ?")
+			args = append(args, string(*in.Status))
 		}
 		if err := AppendHistory(tx, in.ID, "status", string(existing.Status), string(*in.Status)); err != nil {
 			return err
 		}
-		sets = append(sets, "status = ?")
-		args = append(args, string(*in.Status))
 	}
 
 	args = append(args, in.ID)

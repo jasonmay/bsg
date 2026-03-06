@@ -48,7 +48,7 @@ var validTransitions = map[SpecStatus][]SpecStatus{
 	StatusDraft:       {StatusAccepted, StatusPaused, StatusDeprecated, StatusArchived},
 	StatusAccepted:    {StatusImplemented, StatusPaused, StatusDeprecated, StatusArchived},
 	StatusImplemented: {StatusVerified, StatusPaused, StatusDeprecated, StatusArchived},
-	StatusVerified:    {StatusDeprecated, StatusArchived},
+	StatusVerified:    {StatusVerified, StatusDeprecated, StatusArchived},
 	StatusPaused:      {StatusDraft, StatusAccepted, StatusImplemented, StatusDeprecated, StatusArchived},
 	StatusDeprecated:  {StatusArchived},
 }

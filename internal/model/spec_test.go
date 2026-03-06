@@ -52,6 +52,7 @@ func TestValidateTransition(t *testing.T) {
 		{StatusPaused, StatusAccepted, false},
 		{StatusPaused, StatusImplemented, false},
 		{StatusPaused, StatusVerified, true},
+		{StatusVerified, StatusVerified, false},
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.from)+"->"+string(tt.to), func(t *testing.T) {

@@ -19,7 +19,7 @@ Transitions:
   draft       -> accepted, paused, deprecated, archived
   accepted    -> implemented, paused, deprecated, archived
   implemented -> verified, paused, deprecated, archived
-  verified    -> deprecated, archived
+  verified    -> verified (re-verify to clear drift), deprecated, archived
   paused      -> draft, accepted, implemented, deprecated, archived
   deprecated  -> archived`,
 	Args: cobra.ExactArgs(2),
