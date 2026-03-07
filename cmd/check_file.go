@@ -2,19 +2,27 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/jasonmay/bsg/internal/db"
 	"github.com/spf13/cobra"
 )
 
 var checkFileCmd = &cobra.Command{
-	Use:   "check-file <file_path>",
-	Short: "Show specs linked to a file",
-	Args:  cobra.ExactArgs(1),
+	Use:    "check-file <file_path>",
+	Short:  "Show specs linked to a file (use 'inspect' instead)",
+	Hidden: true,
+	Args:   cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		projectRoot := filepath.Dir(BsgDir())
 		filePath := args[0]
 
-		results, err := db.GetSpecsForLocation(DB, filePath, 0, 0)
+		rel, err := resolveToProjectRelative(projectRoot, filePath)
+		if err != nil {
+			return err
+		}
+
+		results, err := db.GetSpecsForLocation(DB, rel, 0, 0)
 		if err != nil {
 			return err
 		}

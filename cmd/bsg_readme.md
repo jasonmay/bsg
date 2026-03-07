@@ -21,10 +21,9 @@ generated ID to stdout. All other commands use this ID, not the spec name.
 | bsg unlink <from> <to> [--relation <rel>] | Remove spec-to-spec relationships |
 | bsg trace <id> --file <path> [--as type] | Link a spec to code (--as: implements, tests, documents) |
 | bsg untrace <id> <file> | Remove a code link |
-| bsg why <file[:line[:col]]> [--recursive] | Show all specs applicable to a file/position |
 | bsg summarize | Print summary of all specs with relationships |
 | bsg prime [--compact] [--json] | Show spec coverage and status |
-| bsg check-file <path> | Show specs linked to a file (with bodies) |
+| bsg inspect [path[:line[:col]]] [--recursive] | Show specs for a file, directory, or cwd |
 | bsg sync | Rebuild database from spec files |
 | bsg setup claude [--dry-run] [--remove] | Install/remove Claude Code hooks |
 | bsg tags [prefix] [--json] | List tags with counts, or filter by prefix |
@@ -90,13 +89,12 @@ Type:       constraint
 Status:     implemented
 ...
 
-$ bsg check-file src/weight.go
-# Linked specs:
-#   bsg-7f1a "Weight entries must be positive" [implemented] — implements:ValidateWeight
-#     Reject zero or negative weight values at input
+$ bsg inspect src/weight.go
+File:
+  bsg-7f1a "Weight entries must be positive" [implemented] (implements) :ValidateWeight
 
-$ bsg why src/weight.go --recursive
-(shows all specs at file scope + upstream specs via edges)
+$ bsg inspect src/ --recursive
+(shows all specs under src/ + upstream specs via edges)
 
 $ bsg delete bsg-7f1a
 deleted bsg-7f1a

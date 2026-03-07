@@ -271,3 +271,36 @@ func scanLinks(rows *sql.Rows) ([]model.CodeLink, error) {
 	}
 	return links, rows.Err()
 }
+
+func GetSpecsForDirectory(db *sql.DB, dirPrefix string) ([]ScopedResult, error) {
+	if dirPrefix != "" && !strings.HasSuffix(dirPrefix, "/") {
+		dirPrefix += "/"
+	}
+
+	query := `SELECT spec_id, file_path, symbol, link_type, scope, start_line, start_col, end_line, end_col, created_at
+		FROM code_links ORDER BY file_path, spec_id`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("query links: %w", err)
+	}
+	defer rows.Close()
+
+	links, err := scanLinks(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []ScopedResult
+	for _, l := range links {
+		if dirPrefix != "" && !strings.HasPrefix(l.FilePath, dirPrefix) {
+			continue
+		}
+		spec, err := GetSpec(db, l.SpecID)
+		if err != nil {
+			continue
+		}
+		results = append(results, ScopedResult{Scope: l.Scope, Spec: *spec, Link: l})
+	}
+	return results, nil
+}

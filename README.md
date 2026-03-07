@@ -53,7 +53,7 @@ bsg prime
 | `bsg trace <id> --file <path>` | Link a spec to code |
 | `bsg untrace <id> <file>` | Remove a code link |
 | `bsg prime` | Show spec coverage, drifted specs, and what's ready |
-| `bsg check-file <path>` | Show specs linked to a file |
+| `bsg inspect [path]` | Show specs for a file, directory, or cwd |
 | `bsg sync` | Force rebuild database from spec files |
 | `bsg setup claude` | Install Claude Code hooks |
 | `bsg lsp` | Start LSP server (stdio) |
@@ -155,7 +155,7 @@ Any status can also transition directly to `archived`.
 BSG is designed to work with coding agents. Run `bsg setup claude` to install hooks that automatically:
 
 - **Session start**: inject spec context via `bsg prime`
-- **File edits**: surface linked specs via `bsg check-file`
+- **File edits**: surface linked specs via `bsg inspect`
 - **Compaction/stop**: refresh spec context via `bsg prime --compact`
 
 The setup also adds a reference to `.bsg/README.md` in your `CLAUDE.md`, so the agent discovers BSG commands on its own.
