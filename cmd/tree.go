@@ -63,9 +63,13 @@ var treeCmd = &cobra.Command{
 		root := &treeNode{name: ".", children: make(map[string]*treeNode)}
 		for path, entry := range fileMap {
 			rel := strings.TrimPrefix(path, trimPrefix)
+			rel = strings.TrimSuffix(rel, "/")
 			parts := strings.Split(rel, "/")
 			node := root
 			for _, part := range parts {
+				if part == "" {
+					continue
+				}
 				child, ok := node.children[part]
 				if !ok {
 					child = &treeNode{name: part, children: make(map[string]*treeNode)}
@@ -73,7 +77,7 @@ var treeCmd = &cobra.Command{
 				}
 				node = child
 			}
-			node.specs = entry.specs
+			node.specs = append(node.specs, entry.specs...)
 		}
 
 		// Render
@@ -113,7 +117,12 @@ func printTree(node *treeNode, prefix string, driftedIDs map[string]bool) {
 		}
 
 		if len(child.children) > 0 {
-			fmt.Printf("%s%s%s/\n", prefix, connector, name)
+			annotation := formatSpecAnnotation(child.specs, driftedIDs)
+			if annotation != "" {
+				fmt.Printf("%s%s%-24s%s\n", prefix, connector, name+"/", annotation)
+			} else {
+				fmt.Printf("%s%s%s/\n", prefix, connector, name)
+			}
 			printTree(child, childPrefix, driftedIDs)
 		} else {
 			annotation := formatSpecAnnotation(child.specs, driftedIDs)
