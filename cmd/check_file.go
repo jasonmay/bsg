@@ -53,6 +53,9 @@ var checkFileCmd = &cobra.Command{
 			if r.Spec.Body != "" {
 				fmt.Printf("#     %s\n", r.Spec.Body)
 			}
+			if warning := checkLinkHealth(projectRoot, r); warning != "" {
+				fmt.Printf("#     !! %s\n", warning)
+			}
 		}
 		return nil
 	},

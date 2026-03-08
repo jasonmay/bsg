@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/jasonmay/bsg/internal/db"
+	"github.com/jasonmay/bsg/internal/display"
 	"github.com/jasonmay/bsg/internal/model"
 	"github.com/spf13/cobra"
 )
@@ -102,6 +104,9 @@ func inspectDirectory(cmd *cobra.Command, projectRoot, dir string) error {
 			detail := formatLinkDetail(r)
 			fmt.Printf("  %s %q [%s] (%s)%s\n",
 				r.Spec.ID, r.Spec.Name, r.Spec.Status, r.Link.LinkType, detail)
+			if warning := checkLinkHealth(projectRoot, r); warning != "" {
+				fmt.Printf("    !! %s\n", warning)
+			}
 		}
 		fmt.Println()
 	}
@@ -186,6 +191,9 @@ func inspectFile(cmd *cobra.Command, projectRoot, arg string) error {
 			detail := formatLinkDetail(item)
 			fmt.Printf("  %s %q [%s] (%s)%s\n",
 				item.Spec.ID, item.Spec.Name, item.Spec.Status, item.Link.LinkType, detail)
+			if warning := checkLinkHealth(projectRoot, item); warning != "" {
+				fmt.Printf("    !! %s\n", warning)
+			}
 		}
 		fmt.Println()
 	}
@@ -223,6 +231,53 @@ func printUpstream(results []db.ScopedResult) error {
 		fmt.Println()
 	}
 	return nil
+}
+
+func checkLinkHealth(projectRoot string, r db.ScopedResult) string {
+	if r.Link.Scope == model.ScopeCodebase || r.Link.Scope == model.ScopeDirectory {
+		return ""
+	}
+
+	absPath := filepath.Join(projectRoot, r.Link.FilePath)
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return display.Red + "file not found" + display.Reset
+	}
+
+	if r.Link.Symbol != "" {
+		data, err := os.ReadFile(absPath)
+		if err != nil {
+			return ""
+		}
+		if !strings.Contains(string(data), r.Link.Symbol) {
+			return display.Red + "symbol " + r.Link.Symbol + " not found in file" + display.Reset
+		}
+	}
+
+	if r.Link.StartLine != nil {
+		lineCount := 0
+		if info.Mode().IsRegular() {
+			f, err := os.Open(absPath)
+			if err != nil {
+				return ""
+			}
+			defer f.Close()
+			scanner := bufio.NewScanner(f)
+			for scanner.Scan() {
+				lineCount++
+			}
+		}
+		if lineCount > 0 && *r.Link.StartLine > lineCount {
+			return fmt.Sprintf("%sline %d beyond end of file (%d lines)%s",
+				display.Red, *r.Link.StartLine, lineCount, display.Reset)
+		}
+		if r.Link.EndLine != nil && lineCount > 0 && *r.Link.EndLine > lineCount {
+			return fmt.Sprintf("%sline %d beyond end of file (%d lines)%s",
+				display.Red, *r.Link.EndLine, lineCount, display.Reset)
+		}
+	}
+
+	return ""
 }
 
 func isDirectory(path string) bool {
