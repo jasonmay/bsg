@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jasonmay/bsg/internal/db"
+	"github.com/jasonmay/bsg/internal/model"
 	"github.com/jasonmay/bsg/internal/display"
 	"github.com/spf13/cobra"
 )
@@ -87,6 +88,32 @@ var treeCmd = &cobra.Command{
 		}
 		fmt.Println(label)
 		printTree(root, "", driftedIDs)
+
+		// Legend — only show statuses present in results
+		seen := make(map[model.SpecStatus]bool)
+		hasDrift := false
+		for _, r := range results {
+			seen[r.Spec.Status] = true
+			if driftedIDs[r.Spec.ID] {
+				hasDrift = true
+			}
+		}
+		statusOrder := []model.SpecStatus{
+			model.StatusDraft, model.StatusAccepted, model.StatusImplemented,
+			model.StatusVerified, model.StatusPaused, model.StatusDeprecated,
+		}
+		var legend []string
+		for _, s := range statusOrder {
+			if seen[s] {
+				legend = append(legend, display.StatusColor(s) + "\u25cf" + display.Reset + " " + string(s))
+			}
+		}
+		if hasDrift {
+			legend = append(legend, display.Gray + "*" + display.Reset + " drifted")
+		}
+		if len(legend) > 0 {
+			fmt.Printf("\n%s\n", strings.Join(legend, "  "))
+		}
 
 		return nil
 	},
