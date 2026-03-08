@@ -27,6 +27,7 @@ generated ID to stdout. All other commands use this ID, not the spec name.
 | bsg sync | Rebuild database from spec files |
 | bsg setup claude [--dry-run] [--remove] | Install/remove Claude Code hooks |
 | bsg tags [prefix] [--json] | List tags with counts, or filter by prefix |
+| bsg tree [path] | Show file tree of spec-linked files with colored status |
 
 ## Spec Types
 
