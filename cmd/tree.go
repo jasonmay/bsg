@@ -137,7 +137,7 @@ func formatSpecAnnotation(specs []db.ScopedResult, driftedIDs map[string]bool) s
 
 		drift := ""
 		if driftedIDs[r.Spec.ID] {
-			drift = "*"
+			drift = display.Gray + "*" + display.Reset
 		}
 
 		color := display.StatusColor(r.Spec.Status)

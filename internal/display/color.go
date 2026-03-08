@@ -13,6 +13,7 @@ const (
 	Cyan    = "\033[36m"
 	Red     = "\033[31m"
 	Gray    = "\033[90m"
+	Brown   = "\033[38;5;130m"
 )
 
 func StatusColor(s model.SpecStatus) string {
