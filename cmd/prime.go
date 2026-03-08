@@ -57,6 +57,13 @@ func printPrimeFull(stats *db.CoverageStats) error {
 		}
 	}
 
+	if len(stats.ReadyToVerify) > 0 {
+		fmt.Printf("## Ready to verify (%d):\n", len(stats.ReadyToVerify))
+		for _, s := range stats.ReadyToVerify {
+			fmt.Printf("  %s %q [implemented, has code links]\n", s.ID, s.Name)
+		}
+	}
+
 	for _, specType := range []model.SpecType{model.SpecTypeConstraint, model.SpecTypeInvariant} {
 		specs, err := db.ListSpecs(DB, db.ListSpecsInput{Type: &specType})
 		if err != nil {
@@ -83,30 +90,22 @@ func printPrimeCompact(stats *db.CoverageStats) error {
 		fmt.Printf(", %d drifted", len(stats.Drifted))
 	}
 	if len(stats.ReadyToImpl) > 0 {
-		fmt.Printf(", %d ready", len(stats.ReadyToImpl))
-		ids := make([]string, 0, len(stats.ReadyToImpl))
-		for _, s := range stats.ReadyToImpl {
-			ids = append(ids, s.ID)
-		}
-		fmt.Printf(" [")
-		for i, id := range ids {
-			if i > 0 {
-				fmt.Print(" ")
-			}
-			fmt.Print(id)
-		}
-		fmt.Print("]")
+		fmt.Printf(", %d to implement", len(stats.ReadyToImpl))
+	}
+	if len(stats.ReadyToVerify) > 0 {
+		fmt.Printf(", %d to verify", len(stats.ReadyToVerify))
 	}
 	fmt.Println()
 	return nil
 }
 
 type primeJSONOutput struct {
-	Total       int              `json:"total"`
-	WithLinks   int              `json:"with_links"`
-	Verified    int              `json:"verified"`
-	Drifted     []driftedJSON    `json:"drifted,omitempty"`
-	ReadyToImpl []readyJSON      `json:"ready_to_implement,omitempty"`
+	Total         int              `json:"total"`
+	WithLinks     int              `json:"with_links"`
+	Verified      int              `json:"verified"`
+	Drifted       []driftedJSON    `json:"drifted,omitempty"`
+	ReadyToImpl   []readyJSON      `json:"ready_to_implement,omitempty"`
+	ReadyToVerify []readyJSON      `json:"ready_to_verify,omitempty"`
 }
 
 type driftedJSON struct {
@@ -140,6 +139,9 @@ func printPrimeJSON(stats *db.CoverageStats) error {
 	}
 	for _, s := range stats.ReadyToImpl {
 		out.ReadyToImpl = append(out.ReadyToImpl, readyJSON{ID: s.ID, Name: s.Name})
+	}
+	for _, s := range stats.ReadyToVerify {
+		out.ReadyToVerify = append(out.ReadyToVerify, readyJSON{ID: s.ID, Name: s.Name})
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")

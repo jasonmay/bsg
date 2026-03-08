@@ -188,6 +188,16 @@ Examples:
 		}
 
 		fmt.Printf("traced %s -> %s%s (%s)\n", spec.ID, parsed.FilePath, rangeInfo, linkType)
+
+		// Auto-transition accepted -> implemented when code is linked
+		if spec.Status == model.StatusAccepted {
+			impl := model.StatusImplemented
+			if err := db.UpdateSpec(DB, BsgDir(), db.UpdateSpecInput{ID: spec.ID, Status: &impl}); err != nil {
+				return err
+			}
+			fmt.Printf("%s -> implemented (auto)\n", spec.ID)
+		}
+
 		return nil
 	},
 }

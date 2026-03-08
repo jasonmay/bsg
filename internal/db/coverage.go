@@ -10,11 +10,12 @@ import (
 )
 
 type CoverageStats struct {
-	Total       int
-	WithLinks   int
-	Verified    int
-	Drifted     []DriftedSpec
-	ReadyToImpl []model.Spec
+	Total         int
+	WithLinks     int
+	Verified      int
+	Drifted       []DriftedSpec
+	ReadyToImpl   []model.Spec
+	ReadyToVerify []model.Spec
 }
 
 type DriftedSpec struct {
@@ -54,6 +55,12 @@ func GetCoverage(db *sql.DB) (*CoverageStats, error) {
 		return nil, err
 	}
 	stats.ReadyToImpl = ready
+
+	readyVerify, err := getReadyToVerify(db)
+	if err != nil {
+		return nil, err
+	}
+	stats.ReadyToVerify = readyVerify
 
 	return &stats, nil
 }
@@ -149,6 +156,30 @@ func getReadyToImpl(db *sql.DB) ([]model.Spec, error) {
 		s, err := scanSpec(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scan ready: %w", err)
+		}
+		specs = append(specs, s)
+	}
+	return specs, rows.Err()
+}
+
+func getReadyToVerify(db *sql.DB) ([]model.Spec, error) {
+	rows, err := db.Query(`
+		SELECT s.id, s.name, s.type, s.status, s.body, s.tags, s.created_at, s.updated_at
+		FROM specs s
+		WHERE s.status = 'implemented'
+		  AND s.id IN (SELECT DISTINCT spec_id FROM code_links)
+		ORDER BY s.created_at
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("query ready to verify: %w", err)
+	}
+	defer rows.Close()
+
+	var specs []model.Spec
+	for rows.Next() {
+		s, err := scanSpec(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan ready to verify: %w", err)
 		}
 		specs = append(specs, s)
 	}
