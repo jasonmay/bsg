@@ -57,6 +57,27 @@ var checkFileCmd = &cobra.Command{
 				fmt.Printf("#     !! %s\n", warning)
 			}
 		}
+
+		// Edge traversal — surface upstream specs
+		var specIDs []string
+		for _, r := range results {
+			specIDs = append(specIDs, r.Spec.ID)
+		}
+		upstream, err := db.GetUpstreamSpecs(DB, specIDs)
+		if err != nil {
+			return err
+		}
+		if len(upstream) > 0 {
+			fmt.Println("# Upstream specs (via edges):")
+			for _, u := range upstream {
+				fmt.Printf("#   %s %q [%s] (%s --%s-->)\n",
+					u.Spec.ID, u.Spec.Name, u.Spec.Status, u.ViaSpec, u.Relation)
+				if u.Spec.Body != "" {
+					fmt.Printf("#     %s\n", u.Spec.Body)
+				}
+			}
+		}
+
 		return nil
 	},
 }
