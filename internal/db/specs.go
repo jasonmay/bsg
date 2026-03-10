@@ -178,15 +178,21 @@ func cascadeDeleteTx(tx *sql.Tx, id string) error {
 }
 
 func DeleteSpec(db *sql.DB, bsgDir string, id string) error {
+	if !IDExists(db, id) {
+		return fmt.Errorf("spec %s not found", id)
+	}
+
+	// Collect neighbor spec IDs before deleting edges
+	neighbors, err := getEdgeNeighbors(db, id)
+	if err != nil {
+		return fmt.Errorf("get neighbors: %w", err)
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
-
-	if !IDExists(db, id) {
-		return fmt.Errorf("spec %s not found", id)
-	}
 
 	if err := cascadeDeleteTx(tx, id); err != nil {
 		return fmt.Errorf("delete spec: %w", err)
@@ -194,7 +200,41 @@ func DeleteSpec(db *sql.DB, bsgDir string, id string) error {
 	if err := tx.Commit(); err != nil {
 		return err
 	}
-	return specfile.DeleteSpec(bsgDir, id)
+
+	// Delete the spec file
+	if err := specfile.DeleteSpec(bsgDir, id); err != nil {
+		return err
+	}
+
+	// Re-export neighbor specs to remove dangling edge references
+	for _, nid := range neighbors {
+		if err := exportSpecFile(db, bsgDir, nid); err != nil {
+			return fmt.Errorf("re-export neighbor %s: %w", nid, err)
+		}
+	}
+	return nil
+}
+
+func getEdgeNeighbors(db *sql.DB, specID string) ([]string, error) {
+	rows, err := db.Query(
+		`SELECT DISTINCT CASE WHEN from_id = ? THEN to_id ELSE from_id END
+		FROM edges WHERE from_id = ? OR to_id = ?`,
+		specID, specID, specID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }
 
 type ListSpecsInput struct {

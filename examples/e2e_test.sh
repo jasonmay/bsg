@@ -214,6 +214,17 @@ bsg delete "$ID4"
 OUT=$(bsg summarize)
 assert_not_contains "delete removes spec" "$OUT" "Extra feature"
 
+echo "=== Test: delete spec with edges cleans neighbors ==="
+ID5=$(bsg add "Deletable feature" --type behavior --body "will be deleted" --tag temp)
+bsg status "$ID5" accepted
+bsg trace "$ID5" --file src/api/handler.go --as documents
+bsg link "$ID5" --depends-on "$ID1"
+bsg delete "$ID5"
+# Sync must succeed — neighbor spec files should not reference deleted spec
+OUT=$(bsg sync 2>&1)
+assert_not_contains "sync after edge delete succeeds" "$OUT" "FOREIGN KEY"
+assert_contains "sync after edge delete" "$OUT" "synced"
+
 echo "=== Test: sync rebuilds from files ==="
 bsg sync
 OUT=$(bsg summarize)
