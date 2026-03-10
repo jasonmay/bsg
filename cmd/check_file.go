@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
+	"sort"
 
 	"github.com/jasonmay/bsg/internal/db"
 	"github.com/spf13/cobra"
@@ -78,8 +81,48 @@ var checkFileCmd = &cobra.Command{
 			}
 		}
 
+		// Run custom hooks from .bsg/hooks/check-file.d/
+		runCustomHooks(filepath.Dir(BsgDir()), filePath)
+
 		return nil
 	},
+}
+
+func runCustomHooks(projectRoot, filePath string) {
+	hookDir := filepath.Join(projectRoot, ".bsg", "hooks", "check-file.d")
+	entries, err := os.ReadDir(hookDir)
+	if err != nil {
+		return
+	}
+
+	var scripts []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		path := filepath.Join(hookDir, name)
+		info, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+		if info.Mode()&0111 != 0 {
+			scripts = append(scripts, path)
+		}
+	}
+	sort.Strings(scripts)
+
+	for _, script := range scripts {
+		cmd := exec.Command(script, filePath)
+		cmd.Dir = projectRoot
+		out, err := cmd.Output()
+		if err != nil {
+			continue
+		}
+		if len(out) > 0 {
+			fmt.Print(string(out))
+		}
+	}
 }
 
 func init() {

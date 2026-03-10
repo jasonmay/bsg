@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/jasonmay/bsg/internal/db"
 	"github.com/jasonmay/bsg/internal/model"
@@ -78,6 +79,20 @@ func printPrimeFull(stats *db.CoverageStats) error {
 			if s.Body != "" {
 				fmt.Printf("    %s\n", s.Body)
 			}
+		}
+	}
+
+	// List custom hooks if present
+	hookDir := filepath.Join(filepath.Dir(BsgDir()), ".bsg", "hooks", "check-file.d")
+	if entries, err := os.ReadDir(hookDir); err == nil {
+		var hooks []string
+		for _, e := range entries {
+			if !e.IsDir() {
+				hooks = append(hooks, e.Name())
+			}
+		}
+		if len(hooks) > 0 {
+			fmt.Printf("## Custom check-file hooks: %v\n", hooks)
 		}
 	}
 

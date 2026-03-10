@@ -101,6 +101,15 @@ $ bsg delete bsg-7f1a
 deleted bsg-7f1a
 ```
 
+## Custom Hooks
+
+Place executable scripts in `.bsg/hooks/check-file.d/` to run custom checks when `bsg check-file`
+fires (via Claude Code PreToolUse). Each script receives the file path as `$1` and runs with the
+project root as its working directory. Script stdout is appended to the hook output.
+
+Example: `.bsg/hooks/check-file.d/parity.sh` — warn about cross-platform parity when editing
+platform-specific files. Scripts can call `bsg inspect --json` for structured spec data.
+
 ## File Format
 
 Spec files in .bsg/specs/<id>.json contain: id, name, type, status, body, tags, links, and edges.
