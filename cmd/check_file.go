@@ -30,59 +30,57 @@ var checkFileCmd = &cobra.Command{
 			return err
 		}
 
-		if len(results) == 0 {
-			return nil
-		}
-
-		fmt.Println("# Linked specs:")
-		for _, r := range results {
-			suffix := ""
-			if r.Link.Symbol != "" {
-				suffix = ":" + r.Link.Symbol
-			}
-			if rs := r.Link.RangeString(); rs != "" {
-				if suffix != "" {
-					suffix += " " + rs
-				} else {
-					suffix = " " + rs
+		if len(results) > 0 {
+			fmt.Println("# Linked specs:")
+			for _, r := range results {
+				suffix := ""
+				if r.Link.Symbol != "" {
+					suffix = ":" + r.Link.Symbol
+				}
+				if rs := r.Link.RangeString(); rs != "" {
+					if suffix != "" {
+						suffix += " " + rs
+					} else {
+						suffix = " " + rs
+					}
+				}
+				scopeTag := ""
+				if r.Scope != "file" {
+					scopeTag = fmt.Sprintf(" [%s]", r.Scope)
+				}
+				fmt.Printf("#   %s %q [%s] — %s%s%s\n",
+					r.Spec.ID, r.Spec.Name, r.Spec.Status, r.Link.LinkType, suffix, scopeTag)
+				if r.Spec.Body != "" {
+					fmt.Printf("#     %s\n", r.Spec.Body)
+				}
+				if warning := checkLinkHealth(projectRoot, r); warning != "" {
+					fmt.Printf("#     !! %s\n", warning)
 				}
 			}
-			scopeTag := ""
-			if r.Scope != "file" {
-				scopeTag = fmt.Sprintf(" [%s]", r.Scope)
-			}
-			fmt.Printf("#   %s %q [%s] — %s%s%s\n",
-				r.Spec.ID, r.Spec.Name, r.Spec.Status, r.Link.LinkType, suffix, scopeTag)
-			if r.Spec.Body != "" {
-				fmt.Printf("#     %s\n", r.Spec.Body)
-			}
-			if warning := checkLinkHealth(projectRoot, r); warning != "" {
-				fmt.Printf("#     !! %s\n", warning)
-			}
-		}
 
-		// Edge traversal — surface upstream specs
-		var specIDs []string
-		for _, r := range results {
-			specIDs = append(specIDs, r.Spec.ID)
-		}
-		upstream, err := db.GetUpstreamSpecs(DB, specIDs)
-		if err != nil {
-			return err
-		}
-		if len(upstream) > 0 {
-			fmt.Println("# Upstream specs (via edges):")
-			for _, u := range upstream {
-				fmt.Printf("#   %s %q [%s] (%s --%s-->)\n",
-					u.Spec.ID, u.Spec.Name, u.Spec.Status, u.ViaSpec, u.Relation)
-				if u.Spec.Body != "" {
-					fmt.Printf("#     %s\n", u.Spec.Body)
+			// Edge traversal — surface upstream specs
+			var specIDs []string
+			for _, r := range results {
+				specIDs = append(specIDs, r.Spec.ID)
+			}
+			upstream, err := db.GetUpstreamSpecs(DB, specIDs)
+			if err != nil {
+				return err
+			}
+			if len(upstream) > 0 {
+				fmt.Println("# Upstream specs (via edges):")
+				for _, u := range upstream {
+					fmt.Printf("#   %s %q [%s] (%s --%s-->)\n",
+						u.Spec.ID, u.Spec.Name, u.Spec.Status, u.ViaSpec, u.Relation)
+					if u.Spec.Body != "" {
+						fmt.Printf("#     %s\n", u.Spec.Body)
+					}
 				}
 			}
 		}
 
 		// Run custom hooks from .bsg/hooks/check-file.d/
-		runCustomHooks(filepath.Dir(BsgDir()), filePath)
+		runCustomHooks(filepath.Dir(BsgDir()), rel)
 
 		return nil
 	},
